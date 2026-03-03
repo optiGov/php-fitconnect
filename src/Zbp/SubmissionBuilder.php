@@ -55,6 +55,7 @@ class SubmissionBuilder
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 
+    /** @return array<string, mixed> */
     private function serializeMessage(ZbpMessage $message): array
     {
         $payload = [
@@ -100,6 +101,7 @@ class SubmissionBuilder
         return $payload;
     }
 
+    /** @return array<string, mixed> */
     private function serializeState(ZbpState $state): array
     {
         $payload = [

@@ -11,6 +11,7 @@ use OptiGov\FitConnect\Zbp\Fluent\StateBuilder;
 
 class Client
 {
+    /** @param array<string, mixed> $config */
     public function __construct(
         private readonly FitConnectClient $fitConnectClient,
         private readonly SubmissionBuilder $submissionBuilder,

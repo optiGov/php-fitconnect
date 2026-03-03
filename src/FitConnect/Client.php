@@ -25,6 +25,7 @@ class Client
 {
     private ?string $accessToken = null;
 
+    /** @param array<string, mixed> $config */
     public function __construct(
         private readonly array $config,
         private readonly Encryptor $encryptor,
@@ -272,6 +273,7 @@ class Client
         return $url;
     }
 
+    /** @return array<string, mixed> */
     private function decodeAndVerifySetJwt(string $jwt): array
     {
         $jws = new CompactSerializer()->unserialize($jwt);
@@ -302,6 +304,7 @@ class Client
         return $payload;
     }
 
+    /** @param  array<string, mixed>  $payload */
     private function validateEventPayload(array $payload): void
     {
         foreach (['jti', 'iss', 'iat', 'sub', 'txn', 'events'] as $claim) {

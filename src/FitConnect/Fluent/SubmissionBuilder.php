@@ -17,6 +17,7 @@ class SubmissionBuilder
 
     private string $serviceName = '';
 
+    /** @var array<Attachment> */
     private array $attachments = [];
 
     private string $destinationId = '';
