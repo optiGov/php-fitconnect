@@ -64,18 +64,21 @@ class FitConnectClientTest extends TestCase
         ];
     }
 
+    private function fakeJwksResponse(): array
+    {
+        return ['keys' => [$this->signingPublicJwk->jsonSerialize()]];
+    }
+
     private function fakeJwtEvent(FitConnectEventState $state): string
     {
-        $b64url = fn (string $s) => rtrim(strtr(base64_encode($s), '+/', '-_'), '=');
-
-        $header = $b64url(json_encode(['alg' => 'none']));
-        $payload = $b64url(json_encode([
-            'events' => [$state->value => []],
-            'iss' => 'fit-connect',
+        return $this->buildSignedSetJwt([
+            'jti' => 'jti-'.bin2hex(random_bytes(4)),
+            'iss' => 'https://submission-api.testing.fitko.dev',
             'iat' => time(),
-        ]));
-
-        return "{$header}.{$payload}.";
+            'sub' => 'submission:'.bin2hex(random_bytes(4)),
+            'txn' => 'case:'.bin2hex(random_bytes(4)),
+            'events' => [$state->value => []],
+        ]);
     }
 
     public function test_send_message_full_flow(): void
@@ -153,6 +156,7 @@ class FitConnectClientTest extends TestCase
     {
         Http::fake([
             '*/token' => Http::response(['access_token' => 'test-token', 'expires_in' => 300]),
+            '*/.well-known/jwks.json' => Http::response($this->fakeJwksResponse()),
             '*/events*' => Http::response([
                 'eventLog' => [
                     $this->fakeJwtEvent(FitConnectEventState::SUBMITTED),
@@ -163,12 +167,13 @@ class FitConnectClientTest extends TestCase
 
         Cache::shouldReceive('store')->with('array')->andReturn(Cache::getFacadeRoot());
         Cache::shouldReceive('get')->with('fitconnect_access_token')->andReturn(null);
-        Cache::shouldReceive('put')->once();
+        Cache::shouldReceive('get')->with('fitconnect_jwks')->andReturn(null);
+        Cache::shouldReceive('put')->atLeast()->times(2);
 
         $status = $this->client->getLastSubmissionEventLog('sub-123');
 
         $this->assertSame(FitConnectEventState::ACCEPTED, $status->state);
-        $this->assertSame('fit-connect', $status->issuer);
+        $this->assertSame('https://submission-api.testing.fitko.dev', $status->issuer);
     }
 
     public function test_uses_config_destination_id_as_default(): void

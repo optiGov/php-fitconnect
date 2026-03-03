@@ -5,8 +5,11 @@ namespace OptiGov\FitConnect\FitConnect;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
 use Jose\Component\KeyManagement\JWKFactory;
+use Jose\Component\Signature\Algorithm\PS512;
+use Jose\Component\Signature\JWSVerifier;
 use Jose\Component\Signature\Serializer\CompactSerializer;
 use OptiGov\FitConnect\Crypto\Encryptor;
 use OptiGov\FitConnect\DTOs\Incoming\DestinationInfo;
@@ -204,11 +207,11 @@ class Client
 
     private function parseEventJwt(string $jwt): SubmissionStatus
     {
-        $payload = $this->decodeJwtPayload($jwt);
+        $payload = $this->decodeAndVerifySetJwt($jwt);
 
-        $eventUrl = array_key_first($payload['events'] ?? []);
-        $state = $eventUrl ? FitConnectEventState::tryFrom($eventUrl) : null;
-        $eventData = $eventUrl ? ($payload['events'][$eventUrl] ?? []) : [];
+        $eventUrl = array_key_first($payload['events']);
+        $state = FitConnectEventState::tryFrom($eventUrl);
+        $eventData = $payload['events'][$eventUrl] ?? [];
 
         return new SubmissionStatus(
             state: $state,
@@ -269,11 +272,96 @@ class Client
         return $url;
     }
 
-    private function decodeJwtPayload(string $jwt): array
+    private function decodeAndVerifySetJwt(string $jwt): array
     {
         $jws = new CompactSerializer()->unserialize($jwt);
 
-        return json_decode($jws->getPayload(), true) ?: [];
+        $header = $jws->getSignature(0)->getProtectedHeader();
+
+        if (($header['typ'] ?? null) !== 'secevent+jwt') {
+            throw new \InvalidArgumentException('Invalid SET: wrong typ header');
+        }
+
+        if (($header['alg'] ?? null) !== 'PS512') {
+            throw new \InvalidArgumentException('Invalid SET: wrong alg header');
+        }
+
+        $kid = $header['kid'] ?? throw new \InvalidArgumentException('Invalid SET: missing kid');
+
+        $payload = json_decode($jws->getPayload(), true) ?: [];
+
+        $this->validateEventPayload($payload);
+
+        $jwk = $this->fetchSigningKey($kid, $payload['iss']);
+
+        $verifier = new JWSVerifier(new AlgorithmManager([new PS512]));
+        if (! $verifier->verifyWithKey($jws, $jwk, 0)) {
+            throw new \InvalidArgumentException('Invalid SET: signature verification failed');
+        }
+
+        return $payload;
+    }
+
+    private function validateEventPayload(array $payload): void
+    {
+        foreach (['jti', 'iss', 'iat', 'sub', 'txn', 'events'] as $claim) {
+            if (! isset($payload[$claim])) {
+                throw new \InvalidArgumentException("Invalid SET: missing claim '{$claim}'");
+            }
+        }
+        if (count($payload['events']) !== 1) {
+            throw new \InvalidArgumentException('Invalid SET: events must contain exactly one entry');
+        }
+    }
+
+    /**
+     * Resolve the signing key based on the issuer type.
+     *
+     * - Issuer starts with "http" → submission service → fetch from /.well-known/jwks.json
+     * - Issuer is a UUID → destination → fetch from /v2/destinations/{iss}/keys/{kid}
+     */
+    private function fetchSigningKey(string $kid, string $issuer): JWK
+    {
+        if (str_starts_with($issuer, 'http')) {
+            return $this->fetchSubmissionServiceSigningKey($kid);
+        }
+
+        return $this->fetchDestinationSigningKey($issuer, $kid);
+    }
+
+    private function fetchSubmissionServiceSigningKey(string $kid): JWK
+    {
+        $cached = Cache::store('array')->get('fitconnect_jwks');
+
+        if ($cached === null) {
+            $response = Http::get($this->endpoint('submission').'/.well-known/jwks.json');
+            if (! $response->successful()) {
+                $this->throwApiException('jwks', $response);
+            }
+            $cached = $response->json('keys', []);
+            Cache::store('array')->put('fitconnect_jwks', $cached);
+        }
+
+        foreach ($cached as $keyData) {
+            if (($keyData['kid'] ?? null) === $kid) {
+                return JWKFactory::createFromValues($keyData);
+            }
+        }
+
+        throw new \InvalidArgumentException("Invalid SET: unknown kid '{$kid}'");
+    }
+
+    private function fetchDestinationSigningKey(string $destinationId, string $kid): JWK
+    {
+        $response = Http::withToken($this->accessToken)
+            ->acceptJson()
+            ->get($this->endpoint('submission')."/v2/destinations/{$destinationId}/keys/{$kid}");
+
+        if (! $response->successful()) {
+            $this->throwApiException('signing_key_fetch', $response);
+        }
+
+        return JWKFactory::createFromValues($response->json());
     }
 
     private function throwApiException(string $step, Response $response): never

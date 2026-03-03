@@ -2,8 +2,12 @@
 
 namespace OptiGov\FitConnect\Tests;
 
+use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
 use Jose\Component\KeyManagement\JWKFactory;
+use Jose\Component\Signature\Algorithm\PS512;
+use Jose\Component\Signature\JWSBuilder;
+use Jose\Component\Signature\Serializer\CompactSerializer;
 
 trait TestKeys
 {
@@ -18,6 +22,12 @@ trait TestKeys
     protected JWK $encryptionPrivateJwk;
 
     protected string $encryptionKid;
+
+    protected JWK $signingPrivateJwk;
+
+    protected JWK $signingPublicJwk;
+
+    protected string $signingKid;
 
     protected function setUpTestKeys(): void
     {
@@ -55,5 +65,34 @@ trait TestKeys
 
         // Public JWK (without private components)
         $this->encryptionJwk = $this->encryptionPrivateJwk->toPublic();
+
+        // Generate RSA keypair for SET signing (PS512, simulates FIT-Connect delivery service)
+        $this->signingKid = 'set-kid-'.bin2hex(random_bytes(4));
+
+        $this->signingPrivateJwk = JWKFactory::createRSAKey(2048, [
+            'alg' => 'PS512',
+            'use' => 'sig',
+            'kid' => $this->signingKid,
+        ]);
+
+        $this->signingPublicJwk = $this->signingPrivateJwk->toPublic();
+    }
+
+    protected function buildSignedSetJwt(array $payload): string
+    {
+        $algorithmManager = new AlgorithmManager([new PS512]);
+        $jwsBuilder = new JWSBuilder($algorithmManager);
+
+        $jws = $jwsBuilder
+            ->create()
+            ->withPayload(json_encode($payload))
+            ->addSignature($this->signingPrivateJwk, [
+                'alg' => 'PS512',
+                'typ' => 'secevent+jwt',
+                'kid' => $this->signingKid,
+            ])
+            ->build();
+
+        return (new CompactSerializer)->serialize($jws, 0);
     }
 }
