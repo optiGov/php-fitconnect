@@ -1,0 +1,48 @@
+# ideas
+/.vscode
+/.idea/workspace.xml
+/.idea/tasks.xml
+/.fleet
+/.idea
+/.nova
+/.zed
+
+# external libraries
+/vendor
+
+
+
+# storage directory
+/storage/*.key
+/storage/database-*.sql.bkp
+/storage/dbdata
+/storage/certs/*
+/storage/clockwork
+
+# configuration
+.env
+.env.backup
+.phpunit.cache
+.phpunit.result.cache
+npm-debug.log
+Homestead.json
+Homestead.yaml
+yarn-error.log
+
+# docker
+docker-compose.yaml
+
+# sbom files
+sbom-php-server.xml
+sbom-vue-backend.json
+sbom-vue-widget.json
+sbom-vue-besucherverwaltung.json
+
+# misc
+/.DS_Store
+/.phpunit.cache
+/public/build
+/storage/pail
+.env.production
+.phpactor.json
+/auth.json
