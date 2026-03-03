@@ -20,8 +20,6 @@ use Symfony\Component\Uid\Uuid;
 
 class Client
 {
-    private const string METADATA_VERSION = '2.1.0';
-
     private ?string $accessToken = null;
 
     public function __construct(
@@ -129,7 +127,7 @@ class Client
 
         // 2. Build + encrypt metadata
         $metadata = [
-            '$schema' => 'https://schema.fitko.de/fit-connect/metadata/'.self::METADATA_VERSION.'/metadata.schema.json',
+            '$schema' => 'https://schema.fitko.de/fit-connect/metadata/2.1.0/metadata.schema.json',
             'contentStructure' => [
                 'data' => [
                     'submissionSchema' => [
