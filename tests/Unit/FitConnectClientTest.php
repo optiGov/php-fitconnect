@@ -66,8 +66,10 @@ class FitConnectClientTest extends TestCase
 
     private function fakeJwtEvent(FitConnectEventState $state): string
     {
-        $header = base64_encode(json_encode(['alg' => 'none']));
-        $payload = base64_encode(json_encode([
+        $b64url = fn (string $s) => rtrim(strtr(base64_encode($s), '+/', '-_'), '=');
+
+        $header = $b64url(json_encode(['alg' => 'none']));
+        $payload = $b64url(json_encode([
             'events' => [$state->value => []],
             'iss' => 'fit-connect',
             'iat' => time(),

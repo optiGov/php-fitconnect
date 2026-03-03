@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Jose\Component\Core\JWK;
 use Jose\Component\KeyManagement\JWKFactory;
+use Jose\Component\Signature\Serializer\CompactSerializer;
 use OptiGov\FitConnect\Crypto\Encryptor;
 use OptiGov\FitConnect\DTOs\Incoming\DestinationInfo;
 use OptiGov\FitConnect\DTOs\Incoming\SubmissionResult;
@@ -270,15 +271,11 @@ class Client
         return $url;
     }
 
-    // TODO: Add signature validation
     private function decodeJwtPayload(string $jwt): array
     {
-        $parts = explode('.', $jwt);
-        if (count($parts) < 2) {
-            return [];
-        }
+        $jws = new CompactSerializer()->unserialize($jwt);
 
-        return json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true) ?: [];
+        return json_decode($jws->getPayload(), true) ?: [];
     }
 
     private function throwApiException(string $step, Response $response): never
