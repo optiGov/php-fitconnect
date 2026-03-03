@@ -13,7 +13,7 @@ class Client
 {
     public function __construct(
         private readonly FitConnectClient $fitConnectClient,
-        private readonly SubmissionBuilder $payloadBuilder,
+        private readonly SubmissionBuilder $submissionBuilder,
         private readonly array $config,
     ) {}
 
@@ -32,7 +32,7 @@ class Client
         $destinationId = $this->config['zbp_destination_id'];
 
         $jwk = $this->fitConnectClient->getJwkForDestination($destinationId);
-        $submission = $this->payloadBuilder->fromMessage($message);
+        $submission = $this->submissionBuilder->fromMessage($message);
 
         return $this->fitConnectClient->submit($submission, $jwk, $destinationId);
     }
@@ -42,7 +42,7 @@ class Client
         $destinationId = $this->config['zbp_destination_id'];
 
         $jwk = $this->fitConnectClient->getJwkForDestination($destinationId);
-        $submission = $this->payloadBuilder->fromState($state);
+        $submission = $this->submissionBuilder->fromState($state);
 
         return $this->fitConnectClient->submit($submission, $jwk, $destinationId);
     }
