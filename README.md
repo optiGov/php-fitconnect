@@ -18,7 +18,7 @@ composer require optigov/fitconnect
 
 ## Configuration
 
-Create a typed config object with your credentials and endpoints:
+Create a typed config object with your credentials and endpoints or use one of the predefined endpoint sets:
 
 ```php
 use OptiGov\FitConnect\Config\FitConnectConfig;
@@ -27,13 +27,7 @@ use OptiGov\FitConnect\Config\Endpoints;
 $config = new FitConnectConfig(
     clientId: 'your-client-id',
     clientSecret: 'your-client-secret',
-    endpoints: new Endpoints(
-        // test (fitko.dev)
-        token: 'https://auth-testing.fit-connect.fitko.dev/token',
-        submission: 'https://test.fit-connect.fitko.dev/submission-api',
-        destination: 'https://test.fit-connect.fitko.dev/destination-api',
-        routing: 'https://routing-api-testing.fit-connect.fitko.dev',
-    ),
+    endpoints: Endpoints::test(),
     // Optional — only needed for ZBP operations (must provide all three or none):
     zbpDestinationId: 'your-destination-uuid',
     zbpSigningKey: file_get_contents('/path/to/key.pem'),
