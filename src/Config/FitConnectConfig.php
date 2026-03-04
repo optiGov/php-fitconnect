@@ -14,8 +14,14 @@ readonly class FitConnectConfig
         public ?string $zbpSigningKey = null,
         public ?string $zbpCertificate = null,
     ) {
-        if (($this->zbpSigningKey === null) !== ($this->zbpCertificate === null)) {
-            throw new \InvalidArgumentException('zbpSigningKey and zbpCertificate must both be provided or both be null');
+        $zbpRequired = [
+            $this->zbpDestinationId !== null,
+            $this->zbpSigningKey !== null,
+            $this->zbpCertificate !== null,
+        ];
+
+        if (count(array_unique($zbpRequired)) !== 1) {
+            throw new \InvalidArgumentException('zbpDestinationId, zbpSigningKey, and zbpCertificate must all be provided or all be null');
         }
     }
 }
