@@ -25,6 +25,11 @@ readonly class Signer
         private string $certificatePem,
     ) {
         $cert = openssl_x509_parse($this->certificatePem);
+
+        if (! $cert) {
+            throw new \RuntimeException('Cannot parse certificate: '.openssl_error_string());
+        }
+
         $this->commonName = $cert['subject']['CN'];
 
         $this->signingJwk = JWKFactory::createFromKey(
@@ -39,6 +44,10 @@ readonly class Signer
     public function sign(string $content): string
     {
         $privateKey = openssl_pkey_get_private($this->privateKeyPem);
+
+        if (! $privateKey) {
+            throw new \InvalidArgumentException('Invalid private key: '.openssl_error_string());
+        }
 
         $signature = '';
         if (! openssl_sign($content, $signature, $privateKey, OPENSSL_ALGO_SHA512)) {
@@ -56,7 +65,7 @@ readonly class Signer
             'exp' => $now + (30 * 60),
             'signer' => $this->commonName,
             'roles' => ['THIRD_PARTY'],
-        ]);
+        ], JSON_THROW_ON_ERROR);
 
         $jws = $this->jwsBuilder
             ->create()

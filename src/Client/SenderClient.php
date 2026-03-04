@@ -122,7 +122,7 @@ readonly class SenderClient
         ];
 
         $encryptedMetadata = $this->encryptor->encrypt(
-            json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
             $jwk,
         );
 

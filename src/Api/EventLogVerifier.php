@@ -6,7 +6,6 @@ namespace OptiGov\FitConnect\Api;
 
 use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
-use Jose\Component\KeyManagement\JWKFactory;
 use Jose\Component\Signature\Algorithm\PS512;
 use Jose\Component\Signature\JWSVerifier;
 use Jose\Component\Signature\Serializer\CompactSerializer;
@@ -92,9 +91,7 @@ readonly class EventLogVerifier
             return $this->fetchSubmissionServiceSigningKey($kid);
         }
 
-        return JWKFactory::createFromValues(
-            $this->apiClient->fetchDestinationSigningKey($issuer, $kid)->jsonSerialize()
-        );
+        return $this->apiClient->fetchDestinationSigningKey($issuer, $kid);
     }
 
     private function fetchSubmissionServiceSigningKey(string $kid): JWK
@@ -103,7 +100,7 @@ readonly class EventLogVerifier
 
         foreach ($keys as $keyData) {
             if (($keyData['kid'] ?? null) === $kid) {
-                return JWKFactory::createFromValues($keyData);
+                return new JWK($keyData);
             }
         }
 

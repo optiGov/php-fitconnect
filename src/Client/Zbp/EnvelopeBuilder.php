@@ -25,7 +25,7 @@ class EnvelopeBuilder
 
     public function fromMessage(ZbpMessage $message): FitConnectSubmission
     {
-        $payloadJson = json_encode($this->serializeMessage($message), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $payloadJson = json_encode($this->serializeMessage($message), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
         return new FitConnectSubmission(
             data: $this->buildSignedEnvelope($payloadJson),
@@ -38,7 +38,7 @@ class EnvelopeBuilder
 
     public function fromState(ZbpState $state): FitConnectSubmission
     {
-        $payloadJson = json_encode($this->serializeState($state), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $payloadJson = json_encode($this->serializeState($state), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
         return new FitConnectSubmission(
             data: $this->buildSignedEnvelope($payloadJson),
@@ -55,7 +55,7 @@ class EnvelopeBuilder
             'sha512sum' => $this->signer->sign($contentJson),
             'authorToken' => $this->signer->buildAuthorJwt(),
             'authorCertificate' => $this->signer->getCertificatePem(),
-        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     }
 
     /** @return array<string, mixed> */

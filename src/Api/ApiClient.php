@@ -6,7 +6,6 @@ namespace OptiGov\FitConnect\Api;
 
 use GuzzleHttp\Client as HttpClient;
 use Jose\Component\Core\JWK;
-use Jose\Component\KeyManagement\JWKFactory;
 use OptiGov\FitConnect\Config\FitConnectConfig;
 use OptiGov\FitConnect\DTOs\Incoming\DestinationInfo;
 use OptiGov\FitConnect\Exceptions\FitConnectException;
@@ -82,7 +81,7 @@ class ApiClient
         $data = $this->jsonDecode($response);
         $keyData = $data['keys'][0];
 
-        return JWKFactory::createFromValues(['use' => 'enc'] + $keyData);
+        return new JWK(['use' => 'enc'] + $keyData);
     }
 
     public function fetchDestinationSigningKey(string $destinationId, string $kid): JWK
@@ -98,7 +97,7 @@ class ApiClient
             $this->throwApiException('signing_key_fetch', $response);
         }
 
-        return JWKFactory::createFromValues($this->jsonDecode($response));
+        return new JWK($this->jsonDecode($response));
     }
 
     /** @return array<array<string, mixed>> */
