@@ -15,6 +15,8 @@ class ApiClient
 {
     private ?string $accessToken = null;
 
+    private ?int $tokenExpiresAt = null;
+
     private HttpClient $httpClient;
 
     /** @var array<string, mixed>|null */
@@ -29,7 +31,7 @@ class ApiClient
 
     public function authenticate(): void
     {
-        if ($this->accessToken) {
+        if ($this->accessToken !== null && time() < $this->tokenExpiresAt) {
             return;
         }
 
@@ -46,7 +48,9 @@ class ApiClient
         }
 
         $data = $this->jsonDecode($response);
+
         $this->accessToken = $data['access_token'];
+        $this->tokenExpiresAt = time() + (int) ($data['expires_in'] ?? 300) - 5;
     }
 
     public function getDestination(string $destinationId): DestinationInfo
