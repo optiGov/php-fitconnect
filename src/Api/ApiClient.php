@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace OptiGov\FitConnect\Api;
 
 use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use Jose\Component\Core\JWK;
 use OptiGov\FitConnect\Config\FitConnectConfig;
 use OptiGov\FitConnect\DTOs\Incoming\DestinationInfo;
 use OptiGov\FitConnect\Exceptions\FitConnectException;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class ApiClient
 {
+    private const int RETRY_MAX_ATTEMPTS = 3;
+
     private ?string $accessToken = null;
 
     private ?int $tokenExpiresAt = null;
@@ -26,7 +31,7 @@ class ApiClient
         private readonly FitConnectConfig $config,
         ?HttpClient $httpClient = null,
     ) {
-        $this->httpClient = $httpClient ?? new HttpClient(['http_errors' => false]);
+        $this->httpClient = $httpClient ?? self::createDefaultHttpClient();
     }
 
     public function authenticate(): void
@@ -234,5 +239,34 @@ class ApiClient
         $body = json_decode((string) $response->getBody(), true) ?? [];
 
         throw new FitConnectException(message: "FitConnect API error during {$step}: HTTP {$response->getStatusCode()}", step: $step, statusCode: $response->getStatusCode(), errorCode: $body['errorCode'] ?? null, description: $body['description'] ?? $body['message'] ?? null);
+    }
+
+    private static function createDefaultHttpClient(): HttpClient
+    {
+        $stack = HandlerStack::create();
+        $stack->push(Middleware::retry(self::retryDecider(...), self::retryDelayInMs(...)));
+
+        return new HttpClient([
+            'http_errors' => false,
+            'handler' => $stack,
+        ]);
+    }
+
+    private static function retryDecider(int $retries, RequestInterface $request, ?ResponseInterface $response): bool
+    {
+        if ($retries >= self::RETRY_MAX_ATTEMPTS) {
+            return false;
+        }
+
+        if ($response === null) {
+            return true;
+        }
+
+        return in_array($response->getStatusCode(), [408, 429, 500, 502, 503, 504], true);
+    }
+
+    private static function retryDelayInMs(int $retries): int
+    {
+        return 500 * (int) pow(2, $retries);
     }
 }
