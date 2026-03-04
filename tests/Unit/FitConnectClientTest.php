@@ -9,8 +9,11 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use OptiGov\FitConnect\Client\SenderClient;
+use OptiGov\FitConnect\Client\ZbpClient;
+use OptiGov\FitConnect\Config\Endpoints;
+use OptiGov\FitConnect\Config\FitConnectConfig;
 use OptiGov\FitConnect\Crypto\Encryptor;
-use OptiGov\FitConnect\Crypto\Signer;
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
 use OptiGov\FitConnect\DTOs\Outgoing\FitConnectSubmission;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpMessage;
@@ -18,10 +21,7 @@ use OptiGov\FitConnect\DTOs\Outgoing\ZbpState;
 use OptiGov\FitConnect\Enums\FitConnectEventState;
 use OptiGov\FitConnect\Enums\ZbpSubmissionState;
 use OptiGov\FitConnect\Exceptions\FitConnectException;
-use OptiGov\FitConnect\FitConnect\Client;
 use OptiGov\FitConnect\Tests\TestKeys;
-use OptiGov\FitConnect\Zbp\Client as ZbpClient;
-use OptiGov\FitConnect\Zbp\SubmissionBuilder;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -35,7 +35,7 @@ class FitConnectClientTest extends TestCase
 {
     use TestKeys;
 
-    private array $config;
+    private FitConnectConfig $config;
 
     /** @var array<int, array{request: RequestInterface, response: ResponseInterface}> */
     private array $history = [];
@@ -45,21 +45,18 @@ class FitConnectClientTest extends TestCase
         parent::setUp();
         $this->setUpTestKeys();
 
-        $this->config = [
-            'client_id' => 'test-client-id',
-            'client_secret' => 'test-client-secret',
-            'zbp_destination_id' => 'default-dest-id',
-            'endpoints' => [
-                'token' => 'https://auth-testing.example.com/token',
-                'submission' => 'https://test.example.com/submission-api',
-                'destination' => 'https://test.example.com/destination-api',
-            ],
-            'callback' => [
-                'enabled' => false,
-                'url' => null,
-                'secret' => null,
-            ],
-        ];
+        $this->config = new FitConnectConfig(
+            clientId: 'test-client-id',
+            clientSecret: 'test-client-secret',
+            endpoints: new Endpoints(
+                token: 'https://auth-testing.example.com/token',
+                submission: 'https://test.example.com/submission-api',
+                destination: 'https://test.example.com/destination-api',
+            ),
+            zbpDestinationId: 'default-dest-id',
+            zbpSigningKey: $this->privateKeyPem,
+            zbpCertificate: $this->certificatePem,
+        );
 
         $this->history = [];
     }
@@ -268,22 +265,18 @@ class FitConnectClientTest extends TestCase
         }
     }
 
-    private function createClient(MockHandler $mock): Client
+    private function createClient(MockHandler $mock): SenderClient
     {
         $handlerStack = HandlerStack::create($mock);
         $handlerStack->push(Middleware::history($this->history));
         $httpClient = new HttpClient(['handler' => $handlerStack, 'http_errors' => false]);
 
-        return new Client($this->config, new Encryptor, $httpClient);
+        return new SenderClient($this->config, new Encryptor, $httpClient);
     }
 
     private function createZbpClient(MockHandler $mock): ZbpClient
     {
-        $client = $this->createClient($mock);
-        $signer = new Signer($this->privateKeyPem, $this->certificatePem);
-        $payloadBuilder = new SubmissionBuilder($signer);
-
-        return new ZbpClient($client, $payloadBuilder, $this->config);
+        return new ZbpClient($this->createClient($mock), $this->config);
     }
 
     private function fakeKeyResponse(): string

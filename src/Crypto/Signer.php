@@ -40,7 +40,7 @@ readonly class Signer
     {
         $privateKey = openssl_pkey_get_private($this->privateKeyPem);
 
-        $signature = null;
+        $signature = '';
         if (! openssl_sign($content, $signature, $privateKey, OPENSSL_ALGO_SHA512)) {
             throw new FitConnectException('Signing failed: '.openssl_error_string(), step: 'sign', statusCode: 0);
         }

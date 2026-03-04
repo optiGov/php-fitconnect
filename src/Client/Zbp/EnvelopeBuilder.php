@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OptiGov\FitConnect\Zbp;
+namespace OptiGov\FitConnect\Client\Zbp;
 
 use OptiGov\FitConnect\Crypto\Signer;
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
@@ -10,7 +10,7 @@ use OptiGov\FitConnect\DTOs\Outgoing\FitConnectSubmission;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpMessage;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpState;
 
-class SubmissionBuilder
+class EnvelopeBuilder
 {
     private const MESSAGE_SERVICE_IDENTIFIER = 'urn:schema-fitko-de:fit-connect:id.bund.de:message_v6';
 

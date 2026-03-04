@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace OptiGov\FitConnect\Zbp\Fluent;
+namespace OptiGov\FitConnect\Fluent\Zbp;
 
+use OptiGov\FitConnect\Client\ZbpClient;
 use OptiGov\FitConnect\DTOs\Incoming\SubmissionResult;
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpMessage;
 use OptiGov\FitConnect\Enums\StorkQaaLevel;
-use OptiGov\FitConnect\Zbp\Client;
 
-class MessageBuilder
+class Message
 {
     private string $mailboxUuid;
 
@@ -38,7 +38,7 @@ class MessageBuilder
     private array $attachments = [];
 
     public function __construct(
-        private readonly Client $client,
+        private readonly ZbpClient $client,
     ) {
     }
 

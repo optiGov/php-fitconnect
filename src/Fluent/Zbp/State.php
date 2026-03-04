@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace OptiGov\FitConnect\Zbp\Fluent;
+namespace OptiGov\FitConnect\Fluent\Zbp;
 
+use OptiGov\FitConnect\Client\ZbpClient;
 use OptiGov\FitConnect\DTOs\Incoming\SubmissionResult;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpState;
 use OptiGov\FitConnect\Enums\ZbpSubmissionState;
-use OptiGov\FitConnect\Zbp\Client;
 
-class StateBuilder
+class State
 {
     private string $applicationId;
 
@@ -28,7 +28,7 @@ class StateBuilder
     private ?string $createdDate = null;
 
     public function __construct(
-        private readonly Client $client,
+        private readonly ZbpClient $client,
     ) {
     }
 

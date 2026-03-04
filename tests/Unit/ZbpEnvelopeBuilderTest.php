@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace OptiGov\FitConnect\Tests\Unit;
 
+use OptiGov\FitConnect\Client\Zbp\EnvelopeBuilder;
 use OptiGov\FitConnect\Crypto\Signer;
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpMessage;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpState;
 use OptiGov\FitConnect\Enums\ZbpSubmissionState;
 use OptiGov\FitConnect\Tests\TestKeys;
-use OptiGov\FitConnect\Zbp\SubmissionBuilder;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,7 +22,7 @@ class ZbpEnvelopeBuilderTest extends TestCase
 {
     use TestKeys;
 
-    private SubmissionBuilder $builder;
+    private EnvelopeBuilder $builder;
 
     protected function setUp(): void
     {
@@ -30,7 +30,7 @@ class ZbpEnvelopeBuilderTest extends TestCase
         $this->setUpTestKeys();
 
         $signer = new Signer($this->privateKeyPem, $this->certificatePem);
-        $this->builder = new SubmissionBuilder($signer);
+        $this->builder = new EnvelopeBuilder($signer);
     }
 
     public function testBuildMessageReturnsFitConnectSubmission(): void

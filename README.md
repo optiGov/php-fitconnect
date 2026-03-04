@@ -18,45 +18,40 @@ composer require optigov/fitconnect
 
 ## Configuration
 
-Create a config array with your credentials and endpoints:
+Create a typed config object with your credentials and endpoints:
 
 ```php
-$config = [
-    'client_id' => 'your-client-id',
-    'client_secret' => 'your-client-secret',
-    'zbp_destination_id' => 'your-destination-uuid',
-    'private_key' => '/path/to/key.pem',
-    'certificate' => '/path/to/cert.cer',
-    'endpoints' => [
+use OptiGov\FitConnect\Config\FitConnectConfig;
+use OptiGov\FitConnect\Config\Endpoints;
+
+$config = new FitConnectConfig(
+    clientId: 'your-client-id',
+    clientSecret: 'your-client-secret',
+    endpoints: new Endpoints(
         // test (fitko.dev)
-        'token'       => 'https://auth-testing.fit-connect.fitko.dev/token',
-        'submission'  => 'https://test.fit-connect.fitko.dev/submission-api',
-        'destination' => 'https://test.fit-connect.fitko.dev/destination-api',
-        'routing'     => 'https://routing-api-testing.fit-connect.fitko.dev',
-    ],
-];
+        token: 'https://auth-testing.fit-connect.fitko.dev/token',
+        submission: 'https://test.fit-connect.fitko.dev/submission-api',
+        destination: 'https://test.fit-connect.fitko.dev/destination-api',
+        routing: 'https://routing-api-testing.fit-connect.fitko.dev',
+    ),
+    // Optional — only needed for ZBP operations (must provide all three or none):
+    zbpDestinationId: 'your-destination-uuid',
+    zbpSigningKey: file_get_contents('/path/to/key.pem'),
+    zbpCertificate: file_get_contents('/path/to/cert.cer'),
+);
 ```
 
 ## Setup
 
 ```php
 use OptiGov\FitConnect\Crypto\Encryptor;
-use OptiGov\FitConnect\Crypto\Signer;
-use OptiGov\FitConnect\FitConnect\Client;
-use OptiGov\FitConnect\Zbp\Client as ZbpClient;
-use OptiGov\FitConnect\Zbp\SubmissionBuilder;
+use OptiGov\FitConnect\Client\SenderClient;
+use OptiGov\FitConnect\Client\ZbpClient;
 
-$encryptor = new Encryptor();
+$senderClient = new SenderClient($config, new Encryptor());
 
-$fitConnectClient = new Client($config, $encryptor);
-
-// For ZBP operations:
-$signer = new Signer(
-    file_get_contents($config['private_key']),
-    file_get_contents($config['certificate']),
-);
-
-$zbpClient = new ZbpClient($fitConnectClient, new SubmissionBuilder($signer), $config);
+// For ZBP operations (requires zbpSigningKey + zbpCertificate in config):
+$zbpClient = new ZbpClient($senderClient, $config);
 ```
 
 ## Usage
@@ -153,7 +148,7 @@ $result = $zbpClient->sendState($state);
 ### Checking submission status
 
 ```php
-$status = $fitConnectClient->getLastSubmissionEventLog($submissionId);
+$status = $senderClient->getLastSubmissionEventLog($submissionId);
 
 echo $status->state->value;
 echo $status->issuer;
@@ -163,7 +158,7 @@ echo $status->issuedAt;
 ### Getting destination info
 
 ```php
-$destination = $fitConnectClient->getDestination($destinationId);
+$destination = $senderClient->getDestination($destinationId);
 
 echo $destination->name;
 echo $destination->status;
@@ -185,7 +180,7 @@ echo $destination->metadataVersions;
 | `replyAddress(string $addr)` | No | Reply address (max 320 chars) |
 | `reference(string $ref)` | No | Reference string (max 255 chars) |
 | `senderUrl(string $url)` | No | Sender URL (max 255 chars) |
-| `attach(string $filename, string $content, string $mimeType)` | No | Add attachment (chainable) |
+| `attach(Attachment $attachment)` | No | Add attachment (chainable) |
 
 ## State builder options
 
