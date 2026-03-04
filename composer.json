@@ -1,20 +1,18 @@
 {
     "name": "optigov/fitconnect",
-    "description": "Laravel package to communicate with ZBP via the FIT-Connect Backend",
+    "description": "PHP package to communicate with ZBP via the FIT-Connect Submission API v2",
     "type": "library",
     "license": "MIT",
     "require": {
         "php": "^8.5",
-        "illuminate/support": "^10.0|^11.0|^12.0",
-        "illuminate/http": "^10.0|^11.0|^12.0",
-        "web-token/jwt-library": "^3.0",
-        "symfony/uid": "^6.0|^7.0",
-        "ext-fileinfo": "*"
+        "ext-fileinfo": "*",
+        "guzzlehttp/guzzle": "^7.0",
+        "symfony/uid": "^7.0",
+        "web-token/jwt-library": "^3.0"
     },
     "require-dev": {
-        "larastan/larastan": "^3.0",
-        "laravel/pint": "^1.27",
-        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^10.0|^11.0"
     },
     "autoload": {
@@ -27,18 +25,9 @@
             "OptiGov\\FitConnect\\Tests\\": "tests/"
         }
     },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "OptiGov\\FitConnect\\FitConnectServiceProvider"
-            ],
-            "aliases": {
-                "FitConnect": "OptiGov\\FitConnect\\Facades\\FitConnect"
-            }
-        }
-    },
     "scripts": {
-        "larastan-analyze": "php -d memory_limit=-1 vendor/bin/phpstan analyse"
+        "phpstan-analyse": "php -d memory_limit=-1 vendor/bin/phpstan analyse",
+        "php-cs-fixer-fix": "php -d memory_limit=-1 vendor/bin/php-cs-fixer fix"
     },
     "config": {
         "sort-packages": true

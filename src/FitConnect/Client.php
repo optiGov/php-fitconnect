@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\FitConnect;
 
-use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
+use GuzzleHttp\Client as HttpClient;
 use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
 use Jose\Component\KeyManagement\JWKFactory;
@@ -19,16 +19,25 @@ use OptiGov\FitConnect\DTOs\Outgoing\FitConnectSubmission;
 use OptiGov\FitConnect\Enums\FitConnectEventState;
 use OptiGov\FitConnect\Exceptions\FitConnectException;
 use OptiGov\FitConnect\FitConnect\Fluent\SubmissionBuilder as FluentSubmissionBuilder;
+use Psr\Http\Message\ResponseInterface;
 
 class Client
 {
     private ?string $accessToken = null;
 
+    private HttpClient $httpClient;
+
+    /** @var array<string, mixed>|null */
+    private ?array $jwksCache = null;
+
     /** @param array<string, mixed> $config */
     public function __construct(
         private readonly array $config,
         private readonly Encryptor $encryptor,
-    ) {}
+        ?HttpClient $httpClient = null,
+    ) {
+        $this->httpClient = $httpClient ?? new HttpClient(['http_errors' => false]);
+    }
 
     public function submission(): FluentSubmissionBuilder
     {
@@ -46,15 +55,18 @@ class Client
     {
         $this->authenticate();
 
-        $response = Http::withToken($this->accessToken)
-            ->acceptJson()
-            ->get($this->endpoint('destination')."/v2/destinations/{$destinationId}");
+        $response = $this->httpClient->request('GET', $this->endpoint('destination')."/v2/destinations/{$destinationId}", [
+            'headers' => [
+                'Authorization' => "Bearer {$this->accessToken}",
+                'Accept' => 'application/json',
+            ],
+        ]);
 
-        if (! $response->successful()) {
+        if (! $this->isSuccessful($response)) {
             $this->throwApiException('destination', $response);
         }
 
-        return DestinationInfo::fromArray($response->json());
+        return DestinationInfo::fromArray($this->jsonDecode($response));
     }
 
     public function getLastSubmissionEventLog(string $submissionId): SubmissionStatus
@@ -62,11 +74,7 @@ class Client
         $logs = $this->getSubmissionEventLogs($submissionId);
 
         if (empty($logs)) {
-            throw new FitConnectException(
-                message: 'FitConnect API error: no events found for submission',
-                step: 'events',
-                statusCode: 0,
-            );
+            throw new FitConnectException(message: 'FitConnect API error: no events found for submission', step: 'events', statusCode: 0);
         }
 
         return end($logs);
@@ -79,18 +87,23 @@ class Client
     {
         $this->authenticate();
 
-        $response = Http::withToken($this->accessToken)
-            ->acceptJson()
-            ->get($this->endpoint('submission')."/v2/submissions/{$submissionId}/events", [
+        $response = $this->httpClient->request('GET', $this->endpoint('submission')."/v2/submissions/{$submissionId}/events", [
+            'headers' => [
+                'Authorization' => "Bearer {$this->accessToken}",
+                'Accept' => 'application/json',
+            ],
+            'query' => [
                 'limit' => 100,
                 'offset' => 0,
-            ]);
+            ],
+        ]);
 
-        if (! $response->successful()) {
+        if (! $this->isSuccessful($response)) {
             $this->throwApiException('events', $response);
         }
 
-        $jwtTokens = $response->json('eventLog', []);
+        $data = $this->jsonDecode($response);
+        $jwtTokens = $data['eventLog'] ?? [];
 
         return array_map(fn (string $jwt) => $this->parseEventJwt($jwt), $jwtTokens);
     }
@@ -151,45 +164,56 @@ class Client
         $encryptedData = $this->encryptor->encrypt($submission->data, $jwk);
 
         // 4. Announce
-        $response = Http::withToken($this->accessToken)
-            ->acceptJson()
-            ->post($this->endpoint('submission').'/v2/submissions', [
+        $response = $this->httpClient->request('POST', $this->endpoint('submission').'/v2/submissions', [
+            'headers' => [
+                'Authorization' => "Bearer {$this->accessToken}",
+                'Accept' => 'application/json',
+            ],
+            'json' => [
                 'destinationId' => $destinationId,
                 'announcedAttachments' => array_map(fn ($attachment) => $attachment->id, $submission->attachments),
                 'publicService' => [
                     'identifier' => $submission->serviceIdentifier,
                     'name' => $submission->serviceName,
                 ],
-            ]);
+            ],
+        ]);
 
-        if (! $response->successful()) {
+        if (! $this->isSuccessful($response)) {
             $this->throwApiException('announce', $response);
         }
 
-        $submissionData = $response->json();
+        $submissionData = $this->jsonDecode($response);
         $submissionId = $submissionData['submissionId'];
 
         // 5. Upload attachments
         foreach ($encryptedAttachments as $attachmentId => $encryptedContent) {
-            $response = Http::withToken($this->accessToken)
-                ->withHeaders(['Content-Type' => 'application/jose'])
-                ->withBody($encryptedContent, 'application/jose')
-                ->put($this->endpoint('submission')."/v2/submissions/{$submissionId}/attachments/{$attachmentId}");
+            $response = $this->httpClient->request('PUT', $this->endpoint('submission')."/v2/submissions/{$submissionId}/attachments/{$attachmentId}", [
+                'headers' => [
+                    'Authorization' => "Bearer {$this->accessToken}",
+                    'Content-Type' => 'application/jose',
+                ],
+                'body' => $encryptedContent,
+            ]);
 
-            if (! $response->successful()) {
+            if (! $this->isSuccessful($response)) {
                 $this->throwApiException('upload', $response);
             }
         }
 
         // 6. Submit
-        $response = Http::withToken($this->accessToken)
-            ->acceptJson()
-            ->put($this->endpoint('submission')."/v2/submissions/{$submissionId}", [
+        $response = $this->httpClient->request('PUT', $this->endpoint('submission')."/v2/submissions/{$submissionId}", [
+            'headers' => [
+                'Authorization' => "Bearer {$this->accessToken}",
+                'Accept' => 'application/json',
+            ],
+            'json' => [
                 'encryptedMetadata' => $encryptedMetadata,
                 'encryptedData' => $encryptedData,
-            ]);
+            ],
+        ]);
 
-        if (! $response->successful()) {
+        if (! $this->isSuccessful($response)) {
             $this->throwApiException('submit', $response);
         }
 
@@ -219,40 +243,41 @@ class Client
 
     private function authenticate(): void
     {
-        $cached = Cache::store('array')->get('fitconnect_access_token');
-        if ($cached) {
-            $this->accessToken = $cached;
-
+        if ($this->accessToken) {
             return;
         }
 
-        $response = Http::asForm()->post($this->endpoint('token'), [
-            'grant_type' => 'client_credentials',
-            'client_id' => $this->config['client_id'],
-            'client_secret' => $this->config['client_secret'],
+        $response = $this->httpClient->request('POST', $this->endpoint('token'), [
+            'form_params' => [
+                'grant_type' => 'client_credentials',
+                'client_id' => $this->config['client_id'],
+                'client_secret' => $this->config['client_secret'],
+            ],
         ]);
 
-        if (! $response->successful()) {
+        if (! $this->isSuccessful($response)) {
             $this->throwApiException('auth', $response);
         }
 
-        $data = $response->json();
+        $data = $this->jsonDecode($response);
         $this->accessToken = $data['access_token'];
-
-        Cache::store('array')->put('fitconnect_access_token', $this->accessToken, $data['expires_in']);
     }
 
     private function fetchDestinationKey(string $destinationId): JWK
     {
-        $response = Http::withToken($this->accessToken)
-            ->acceptJson()
-            ->get($this->endpoint('destination')."/v2/destinations/{$destinationId}/keys");
+        $response = $this->httpClient->request('GET', $this->endpoint('destination')."/v2/destinations/{$destinationId}/keys", [
+            'headers' => [
+                'Authorization' => "Bearer {$this->accessToken}",
+                'Accept' => 'application/json',
+            ],
+        ]);
 
-        if (! $response->successful()) {
+        if (! $this->isSuccessful($response)) {
             $this->throwApiException('key_fetch', $response);
         }
 
-        $keyData = $response->json('keys.0');
+        $data = $this->jsonDecode($response);
+        $keyData = $data['keys'][0];
 
         return JWKFactory::createFromValues(['use' => 'enc'] + $keyData);
     }
@@ -315,8 +340,8 @@ class Client
     /**
      * Resolve the signing key based on the issuer type.
      *
-     * - Issuer starts with "http" → submission service → fetch from /.well-known/jwks.json
-     * - Issuer is a UUID → destination → fetch from /v2/destinations/{iss}/keys/{kid}
+     * - Issuer starts with "http" -> submission service -> fetch from /.well-known/jwks.json
+     * - Issuer is a UUID -> destination -> fetch from /v2/destinations/{iss}/keys/{kid}
      */
     private function fetchSigningKey(string $kid, string $issuer): JWK
     {
@@ -329,18 +354,16 @@ class Client
 
     private function fetchSubmissionServiceSigningKey(string $kid): JWK
     {
-        $cached = Cache::store('array')->get('fitconnect_jwks');
-
-        if ($cached === null) {
-            $response = Http::get($this->endpoint('submission').'/.well-known/jwks.json');
-            if (! $response->successful()) {
+        if ($this->jwksCache === null) {
+            $response = $this->httpClient->request('GET', $this->endpoint('submission').'/.well-known/jwks.json');
+            if (! $this->isSuccessful($response)) {
                 $this->throwApiException('jwks', $response);
             }
-            $cached = $response->json('keys', []);
-            Cache::store('array')->put('fitconnect_jwks', $cached);
+            $data = $this->jsonDecode($response);
+            $this->jwksCache = $data['keys'] ?? [];
         }
 
-        foreach ($cached as $keyData) {
+        foreach ($this->jwksCache as $keyData) {
             if (($keyData['kid'] ?? null) === $kid) {
                 return JWKFactory::createFromValues($keyData);
             }
@@ -351,27 +374,37 @@ class Client
 
     private function fetchDestinationSigningKey(string $destinationId, string $kid): JWK
     {
-        $response = Http::withToken($this->accessToken)
-            ->acceptJson()
-            ->get($this->endpoint('submission')."/v2/destinations/{$destinationId}/keys/{$kid}");
+        $response = $this->httpClient->request('GET', $this->endpoint('submission')."/v2/destinations/{$destinationId}/keys/{$kid}", [
+            'headers' => [
+                'Authorization' => "Bearer {$this->accessToken}",
+                'Accept' => 'application/json',
+            ],
+        ]);
 
-        if (! $response->successful()) {
+        if (! $this->isSuccessful($response)) {
             $this->throwApiException('signing_key_fetch', $response);
         }
 
-        return JWKFactory::createFromValues($response->json());
+        return JWKFactory::createFromValues($this->jsonDecode($response));
     }
 
-    private function throwApiException(string $step, Response $response): never
+    private function isSuccessful(ResponseInterface $response): bool
     {
-        $body = $response->json() ?? [];
+        $status = $response->getStatusCode();
 
-        throw new FitConnectException(
-            message: "FitConnect API error during {$step}: HTTP {$response->status()}",
-            step: $step,
-            statusCode: $response->status(),
-            errorCode: $body['errorCode'] ?? null,
-            description: $body['description'] ?? $body['message'] ?? null,
-        );
+        return $status >= 200 && $status < 300;
+    }
+
+    /** @return array<string, mixed> */
+    private function jsonDecode(ResponseInterface $response): array
+    {
+        return json_decode($response->getBody()->getContents(), true) ?? [];
+    }
+
+    private function throwApiException(string $step, ResponseInterface $response): never
+    {
+        $body = json_decode((string) $response->getBody(), true) ?? [];
+
+        throw new FitConnectException(message: "FitConnect API error during {$step}: HTTP {$response->getStatusCode()}", step: $step, statusCode: $response->getStatusCode(), errorCode: $body['errorCode'] ?? null, description: $body['description'] ?? $body['message'] ?? null);
     }
 }

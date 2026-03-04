@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Traits;
 
 trait ValidateHelper
@@ -27,7 +29,7 @@ trait ValidateHelper
         if (\DateTime::createFromFormat(\DateTime::ATOM, $value) === false
             && \DateTime::createFromFormat('Y-m-d\TH:i:s.v\Z', $value) === false
             && \DateTime::createFromFormat('Y-m-d\TH:i:s\Z', $value) === false) {
-            throw new \InvalidArgumentException(static::class.": '$field' must be a valid ISO 8601 date-time, got '{$value}'");
+            throw new \InvalidArgumentException(static::class.": '{$field}' must be a valid ISO 8601 date-time, got '{$value}'");
         }
     }
 }

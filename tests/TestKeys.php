@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Tests;
 
 use Jose\Component\Core\AlgorithmManager;
@@ -91,8 +93,9 @@ trait TestKeys
                 'typ' => 'secevent+jwt',
                 'kid' => $this->signingKid,
             ])
-            ->build();
+            ->build()
+        ;
 
-        return (new CompactSerializer)->serialize($jws, 0);
+        return new CompactSerializer()->serialize($jws, 0);
     }
 }

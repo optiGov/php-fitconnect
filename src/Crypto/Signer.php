@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Crypto;
 
 use Jose\Component\Core\AlgorithmManager;
@@ -40,11 +42,7 @@ readonly class Signer
 
         $signature = null;
         if (! openssl_sign($content, $signature, $privateKey, OPENSSL_ALGO_SHA512)) {
-            throw new FitConnectException(
-                'Signing failed: '.openssl_error_string(),
-                step: 'sign',
-                statusCode: 0,
-            );
+            throw new FitConnectException('Signing failed: '.openssl_error_string(), step: 'sign', statusCode: 0);
         }
 
         return base64_encode($signature);
@@ -64,9 +62,10 @@ readonly class Signer
             ->create()
             ->withPayload($payload)
             ->addSignature($this->signingJwk, ['typ' => 'JWT', 'alg' => 'RS512'])
-            ->build();
+            ->build()
+        ;
 
-        return (new CompactSerializer)->serialize($jws, 0);
+        return new CompactSerializer()->serialize($jws, 0);
     }
 
     public function getCertificatePem(): string

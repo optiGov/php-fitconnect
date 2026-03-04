@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Tests\Unit;
 
 use OptiGov\FitConnect\Crypto\Signer;
@@ -11,6 +13,11 @@ use OptiGov\FitConnect\Tests\TestKeys;
 use OptiGov\FitConnect\Zbp\SubmissionBuilder;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 class ZbpEnvelopeBuilderTest extends TestCase
 {
     use TestKeys;
@@ -26,7 +33,7 @@ class ZbpEnvelopeBuilderTest extends TestCase
         $this->builder = new SubmissionBuilder($signer);
     }
 
-    public function test_build_message_returns_fit_connect_submission(): void
+    public function testBuildMessageReturnsFitConnectSubmission(): void
     {
         $message = new ZbpMessage(
             mailboxUuid: 'e3cacc6f-f53f-4d2c-aa7c-e7c66cfe512c',
@@ -51,7 +58,7 @@ class ZbpEnvelopeBuilderTest extends TestCase
         $this->assertArrayHasKey('authorCertificate', $envelope);
     }
 
-    public function test_build_message_passes_attachments_through(): void
+    public function testBuildMessagePassesAttachmentsThrough(): void
     {
         $attachments = [
             new Attachment('file1.pdf', 'pdf-content', 'application/pdf'),
@@ -74,7 +81,7 @@ class ZbpEnvelopeBuilderTest extends TestCase
         $this->assertSame('file2.txt', $submission->attachments[1]->filename);
     }
 
-    public function test_build_message_includes_attachment_hashes_in_signed_payload(): void
+    public function testBuildMessageIncludesAttachmentHashesInSignedPayload(): void
     {
         $message = new ZbpMessage(
             mailboxUuid: 'e3cacc6f-f53f-4d2c-aa7c-e7c66cfe512c',
@@ -96,7 +103,7 @@ class ZbpEnvelopeBuilderTest extends TestCase
         $this->assertSame(hash('sha512', 'pdf-bytes'), $payload['attachments'][0]['sha512sum']);
     }
 
-    public function test_build_state_returns_fit_connect_submission(): void
+    public function testBuildStateReturnsFitConnectSubmission(): void
     {
         $state = new ZbpState(
             applicationId: '54a0cd6a-e11a-4cbb-888f-56f2ca00d8af',
@@ -112,7 +119,7 @@ class ZbpEnvelopeBuilderTest extends TestCase
         $this->assertSame('ZBP State Forwarding', $submission->serviceName);
     }
 
-    public function test_build_state_has_no_attachments(): void
+    public function testBuildStateHasNoAttachments(): void
     {
         $state = new ZbpState(
             applicationId: '54a0cd6a-e11a-4cbb-888f-56f2ca00d8af',

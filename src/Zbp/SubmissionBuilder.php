@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Zbp;
 
 use OptiGov\FitConnect\Crypto\Signer;
@@ -18,7 +20,8 @@ class SubmissionBuilder
 
     public function __construct(
         private readonly Signer $signer,
-    ) {}
+    ) {
+    }
 
     public function fromMessage(ZbpMessage $message): FitConnectSubmission
     {

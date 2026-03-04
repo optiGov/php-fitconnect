@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Tests\Unit\DTOs;
 
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
@@ -7,9 +9,14 @@ use OptiGov\FitConnect\DTOs\Outgoing\ZbpMessage;
 use OptiGov\FitConnect\Enums\StorkQaaLevel;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 class ZbpMessageTest extends TestCase
 {
-    public function test_zbp_message_construction(): void
+    public function testZbpMessageConstruction(): void
     {
         $attachment = new Attachment('doc.pdf', 'content', 'application/pdf');
 
@@ -38,7 +45,7 @@ class ZbpMessageTest extends TestCase
         $this->assertNull($message->senderUrl);
     }
 
-    public function test_zbp_message_defaults(): void
+    public function testZbpMessageDefaults(): void
     {
         $message = new ZbpMessage(
             mailboxUuid: 'e3cacc6f-f53f-4d2c-aa7c-e7c66cfe512c',

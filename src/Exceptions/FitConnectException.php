@@ -1,11 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Exceptions;
 
-use RuntimeException;
-use Throwable;
-
-class FitConnectException extends RuntimeException
+class FitConnectException extends \RuntimeException
 {
     public function __construct(
         string $message,
@@ -13,7 +12,7 @@ class FitConnectException extends RuntimeException
         public readonly int $statusCode,
         public readonly ?string $errorCode = null,
         public readonly ?string $description = null,
-        ?Throwable $previous = null,
+        ?\Throwable $previous = null,
     ) {
         parent::__construct($message, $statusCode, $previous);
     }

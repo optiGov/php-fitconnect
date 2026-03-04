@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Zbp;
 
 use OptiGov\FitConnect\DTOs\Incoming\SubmissionResult;
@@ -16,7 +18,8 @@ class Client
         private readonly FitConnectClient $fitConnectClient,
         private readonly SubmissionBuilder $submissionBuilder,
         private readonly array $config,
-    ) {}
+    ) {
+    }
 
     public function message(): MessageBuilder
     {

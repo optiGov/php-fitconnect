@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Crypto;
 
 use Jose\Component\Core\AlgorithmManager;
@@ -37,7 +39,8 @@ readonly class Encryptor
                 'cty' => 'application/json',
             ])
             ->addRecipient($key)
-            ->build();
+            ->build()
+        ;
 
         return $this->serializer->serialize($jwe, 0);
     }

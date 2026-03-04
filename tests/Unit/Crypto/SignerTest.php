@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Tests\Unit\Crypto;
 
 use Jose\Component\Core\AlgorithmManager;
@@ -11,6 +13,11 @@ use OptiGov\FitConnect\Crypto\Signer;
 use OptiGov\FitConnect\Tests\TestKeys;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 class SignerTest extends TestCase
 {
     use TestKeys;
@@ -24,7 +31,7 @@ class SignerTest extends TestCase
         $this->signer = new Signer($this->privateKeyPem, $this->certificatePem);
     }
 
-    public function test_sign_produces_verifiable_signature(): void
+    public function testSignProducesVerifiableSignature(): void
     {
         $content = 'Hello, FIT-Connect!';
         $signature = $this->signer->sign($content);
@@ -36,7 +43,7 @@ class SignerTest extends TestCase
         $this->assertSame(1, $result);
     }
 
-    public function test_sign_different_content_produces_different_signature(): void
+    public function testSignDifferentContentProducesDifferentSignature(): void
     {
         $sig1 = $this->signer->sign('content A');
         $sig2 = $this->signer->sign('content B');
@@ -44,7 +51,7 @@ class SignerTest extends TestCase
         $this->assertNotSame($sig1, $sig2);
     }
 
-    public function test_build_author_jwt_has_correct_claims(): void
+    public function testBuildAuthorJwtHasCorrectClaims(): void
     {
         $jwt = $this->signer->buildAuthorJwt();
 
@@ -60,7 +67,7 @@ class SignerTest extends TestCase
         $this->assertSame($payload['iat'] + 1800, $payload['exp']); // 30 min default
     }
 
-    public function test_build_author_jwt_is_valid_rs512(): void
+    public function testBuildAuthorJwtIsValidRs512(): void
     {
         $jwt = $this->signer->buildAuthorJwt();
 

@@ -1,14 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Tests\Unit\DTOs;
 
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpState;
 use OptiGov\FitConnect\Enums\ZbpSubmissionState;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 class ZbpStateTest extends TestCase
 {
-    public function test_zbp_state_construction(): void
+    public function testZbpStateConstruction(): void
     {
         $state = new ZbpState(
             applicationId: '54a0cd6a-e11a-4cbb-888f-56f2ca00d8af',
@@ -29,7 +36,7 @@ class ZbpStateTest extends TestCase
         $this->assertNull($state->createdDate);
     }
 
-    public function test_zbp_state_defaults_created_date_to_null(): void
+    public function testZbpStateDefaultsCreatedDateToNull(): void
     {
         $state = new ZbpState(
             applicationId: '54a0cd6a-e11a-4cbb-888f-56f2ca00d8af',

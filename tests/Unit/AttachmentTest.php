@@ -1,13 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Tests\Unit;
 
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 class AttachmentTest extends TestCase
 {
-    public function test_from_string_creates_attachment(): void
+    public function testFromStringCreatesAttachment(): void
     {
         $attachment = Attachment::fromString('hello world', 'test.txt', 'text/plain');
 
@@ -17,20 +24,20 @@ class AttachmentTest extends TestCase
         $this->assertNotEmpty($attachment->id);
     }
 
-    public function test_from_string_uses_default_mime_type(): void
+    public function testFromStringUsesDefaultMimeType(): void
     {
         $attachment = Attachment::fromString('data', 'file.bin');
 
         $this->assertSame('application/octet-stream', $attachment->mimeType);
     }
 
-    public function test_from_string_rejects_empty_content(): void
+    public function testFromStringRejectsEmptyContent(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         Attachment::fromString('', 'test.txt');
     }
 
-    public function test_from_path_creates_attachment(): void
+    public function testFromPathCreatesAttachment(): void
     {
         $tmpFile = tempnam(sys_get_temp_dir(), 'attach_test_');
         file_put_contents($tmpFile, 'file content');
@@ -46,7 +53,7 @@ class AttachmentTest extends TestCase
         }
     }
 
-    public function test_from_path_detects_mime_type(): void
+    public function testFromPathDetectsMimeType(): void
     {
         $tmpFile = tempnam(sys_get_temp_dir(), 'attach_test_').'.txt';
         file_put_contents($tmpFile, 'plain text');
@@ -62,7 +69,7 @@ class AttachmentTest extends TestCase
         }
     }
 
-    public function test_from_path_throws_for_missing_file(): void
+    public function testFromPathThrowsForMissingFile(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('File does not exist');

@@ -1,13 +1,12 @@
 # optigov/fitconnect
 
-Laravel package for sending ZBP (Zentrales Buergerpostfach) messages and state updates via the [FIT-Connect Submission API v2](https://docs.fitko.de/fit-connect/).
+PHP package for sending ZBP (Zentrales Buergerpostfach) messages and state updates via the [FIT-Connect Submission API v2](https://docs.fitko.de/fit-connect/).
 
-Other submission type are not implemented yet.
+Other submission types are not implemented yet.
 
 ## Requirements
 
 - PHP 8.5+
-- Laravel 12
 - FIT-Connect API credentials
 - RSA private key and ZBP certificate for signing and encryption
 
@@ -17,57 +16,48 @@ Other submission type are not implemented yet.
 composer require optigov/fitconnect
 ```
 
-The service provider is auto-discovered.
-
 ## Configuration
 
-Add the following to your `.env`:
-
-```env
-FITCONNECT_CLIENT_ID=your-client-id
-FITCONNECT_CLIENT_SECRET=your-client-secret
-FITCONNECT_DESTINATION_ID=your-destination-uuid
-FITCONNECT_PRIVATE_KEY_PATH=/path/to/key.pem
-FITCONNECT_CERTIFICATE_PATH=/path/to/cert.cer
-```
-
-### Environments
-
-The config file (`config/fitconnect.php`) contains endpoint blocks for `test`, `stage`, and `prod`. 
-
-Activate the desired environment by uncommenting the appropriate block and commenting out the others:
+Create a config array with your credentials and endpoints:
 
 ```php
-'endpoints' => [
-    // test (fitko.dev)
-    'token'       => 'https://auth-testing.fit-connect.fitko.dev/token',
-    'submission'  => 'https://test.fit-connect.fitko.dev/submission-api',
-    'destination' => 'https://test.fit-connect.fitko.dev/destination-api',
-    'routing'     => 'https://routing-api-testing.fit-connect.fitko.dev',
-
-    // stage (fitko.net) — uncomment to use
-    // 'token'       => 'https://auth-refz.fit-connect.fitko.net/token',
-    // ...
-
-    // prod (fitko.net) — uncomment to use
-    // 'token'       => 'https://auth-prod.fit-connect.fitko.net/token',
-    // ...
-],
+$config = [
+    'client_id' => 'your-client-id',
+    'client_secret' => 'your-client-secret',
+    'zbp_destination_id' => 'your-destination-uuid',
+    'private_key' => '/path/to/key.pem',
+    'certificate' => '/path/to/cert.cer',
+    'endpoints' => [
+        // test (fitko.dev)
+        'token'       => 'https://auth-testing.fit-connect.fitko.dev/token',
+        'submission'  => 'https://test.fit-connect.fitko.dev/submission-api',
+        'destination' => 'https://test.fit-connect.fitko.dev/destination-api',
+        'routing'     => 'https://routing-api-testing.fit-connect.fitko.dev',
+    ],
+];
 ```
 
-Publish the config first if you haven't already:
+## Setup
 
-```bash
-php artisan vendor:publish --tag=fitconnect-config
+```php
+use OptiGov\FitConnect\Crypto\Encryptor;
+use OptiGov\FitConnect\Crypto\Signer;
+use OptiGov\FitConnect\FitConnect\Client;
+use OptiGov\FitConnect\Zbp\Client as ZbpClient;
+use OptiGov\FitConnect\Zbp\SubmissionBuilder;
+
+$encryptor = new Encryptor();
+
+$fitConnectClient = new Client($config, $encryptor);
+
+// For ZBP operations:
+$signer = new Signer(
+    file_get_contents($config['private_key']),
+    file_get_contents($config['certificate']),
+);
+
+$zbpClient = new ZbpClient($fitConnectClient, new SubmissionBuilder($signer), $config);
 ```
-
-### Metadata version
-
-```env
-FITCONNECT_METADATA_VERSION=2.1.0
-```
-
-The metadata schema version defaults to `2.1.0` and is automatically negotiated with the destination's supported versions.
 
 ## Usage
 
@@ -76,10 +66,8 @@ The package provides two equivalent APIs — a **fluent builder** API and a **DT
 ### Sending a message (fluent builder)
 
 ```php
-use OptiGov\FitConnect\Facades\Zbp;
-
-$result = Zbp::message()
-    ->to('e0e02494-eca2-4a6b-9320-fc527747878c')            
+$result = $zbpClient->message()
+    ->to('e0e02494-eca2-4a6b-9320-fc527747878c')
     ->from('My Service Portal')
     ->title('Your application has been received')
     ->content('We received your application on ...')
@@ -89,16 +77,15 @@ $result = Zbp::message()
 
 echo $result->submissionId;
 echo $result->caseId;
-echo $result->destinationId;  
+echo $result->destinationId;
 ```
 
 ### Sending a message with attachments
 
 ```php
-use OptiGov\FitConnect\Facades\Zbp;
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
 
-$result = Zbp::message()
+$result = $zbpClient->message()
     ->to('e0e02494-eca2-4a6b-9320-fc527747878c')
     ->from('My Service Portal')
     ->title('Your application has been received')
@@ -112,7 +99,6 @@ $result = Zbp::message()
 ### Sending a message (DTO API)
 
 ```php
-use OptiGov\FitConnect\Facades\Zbp;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpMessage;
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
 use OptiGov\FitConnect\Enums\StorkQaaLevel;
@@ -130,16 +116,15 @@ $message = new ZbpMessage(
     ],
 );
 
-$result = Zbp::sendMessage($message);
+$result = $zbpClient->sendMessage($message);
 ```
 
 ### Sending a state update
 
 ```php
-use OptiGov\FitConnect\Facades\Zbp;
 use OptiGov\FitConnect\Enums\ZbpSubmissionState;
 
-$result = Zbp::state()
+$result = $zbpClient->state()
     ->applicationId('9ef6c096-131c-4e0e-895a-3503b80775ec')
     ->status(ZbpSubmissionState::PROCESSING)
     ->publicServiceName('Building Permit Application')
@@ -152,7 +137,6 @@ $result = Zbp::state()
 ### Sending a state update (DTO API)
 
 ```php
-use OptiGov\FitConnect\Facades\Zbp;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpState;
 use OptiGov\FitConnect\Enums\ZbpSubmissionState;
 
@@ -163,15 +147,13 @@ $state = new ZbpState(
     senderName: 'Building Authority',
 );
 
-$result = Zbp::sendState($state);
+$result = $zbpClient->sendState($state);
 ```
 
 ### Checking submission status
 
 ```php
-use OptiGov\FitConnect\Facades\FitConnect;
-
-$status = FitConnect::getLastSubmissionEventLog($submissionId);
+$status = $fitConnectClient->getLastSubmissionEventLog($submissionId);
 
 echo $status->state->value;
 echo $status->issuer;
@@ -181,9 +163,7 @@ echo $status->issuedAt;
 ### Getting destination info
 
 ```php
-use OptiGov\FitConnect\Facades\FitConnect;
-
-$destination = FitConnect::getDestination($destinationId);
+$destination = $fitConnectClient->getDestination($destinationId);
 
 echo $destination->name;
 echo $destination->status;
@@ -219,4 +199,3 @@ echo $destination->metadataVersions;
 | `additionalInformation(string $info)` | No | Additional info (max 100 chars) |
 | `reference(string $ref)` | No | Reference (max 50 chars) |
 | `createdDate(string $datetime)` | No | ISO 8601 datetime (defaults to now) |
-

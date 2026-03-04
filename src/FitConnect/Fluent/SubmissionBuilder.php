@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\FitConnect\Fluent;
 
 use OptiGov\FitConnect\DTOs\Incoming\SubmissionResult;
@@ -22,7 +24,9 @@ class SubmissionBuilder
 
     private string $destinationId = '';
 
-    public function __construct(private readonly Client $client) {}
+    public function __construct(private readonly Client $client)
+    {
+    }
 
     public function data(string $dataJson): self
     {

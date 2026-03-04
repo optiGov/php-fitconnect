@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\DTOs\Incoming;
 
 use OptiGov\FitConnect\Enums\FitConnectEventState;
@@ -12,5 +14,6 @@ readonly class SubmissionStatus
         public ?string $issuer = null,
         public ?string $issuedAt = null,
         public array $problems = [],
-    ) {}
+    ) {
+    }
 }

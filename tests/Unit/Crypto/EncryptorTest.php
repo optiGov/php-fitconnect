@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Tests\Unit\Crypto;
 
 use Jose\Component\Core\AlgorithmManager;
@@ -11,6 +13,11 @@ use OptiGov\FitConnect\Crypto\Encryptor;
 use OptiGov\FitConnect\Tests\TestKeys;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 class EncryptorTest extends TestCase
 {
     use TestKeys;
@@ -24,7 +31,7 @@ class EncryptorTest extends TestCase
         $this->encryptor = new Encryptor;
     }
 
-    public function test_encrypt_produces_jwe_compact_format(): void
+    public function testEncryptProducesJweCompactFormat(): void
     {
         $result = $this->encryptor->encrypt('test payload', $this->encryptionJwk);
 
@@ -32,7 +39,7 @@ class EncryptorTest extends TestCase
         $this->assertCount(5, $parts, 'JWE compact serialization should have 5 parts');
     }
 
-    public function test_encrypted_payload_is_decryptable(): void
+    public function testEncryptedPayloadIsDecryptable(): void
     {
         $plaintext = '{"message": "Hello, World!"}';
 
@@ -52,7 +59,7 @@ class EncryptorTest extends TestCase
         $this->assertSame($plaintext, $jwe->getPayload());
     }
 
-    public function test_encrypt_sets_correct_headers(): void
+    public function testEncryptSetsCorrectHeaders(): void
     {
         $encrypted = $this->encryptor->encrypt('test', $this->encryptionJwk);
 

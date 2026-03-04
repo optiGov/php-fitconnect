@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\Zbp\Fluent;
 
 use OptiGov\FitConnect\DTOs\Incoming\SubmissionResult;
@@ -37,7 +39,8 @@ class MessageBuilder
 
     public function __construct(
         private readonly Client $client,
-    ) {}
+    ) {
+    }
 
     public function to(string $mailboxUuid): self
     {

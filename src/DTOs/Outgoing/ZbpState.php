@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace OptiGov\FitConnect\DTOs\Outgoing;
 
 use OptiGov\FitConnect\Enums\ZbpSubmissionState;
