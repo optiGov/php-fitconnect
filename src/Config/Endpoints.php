@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace OptiGov\FitConnect\Config;
 
-class Endpoints
+readonly class Endpoints
 {
     public function __construct(
-        public readonly string $token,
-        public readonly string $submission,
-        public readonly string $destination,
-        public readonly string $routing,
+        public string $token,
+        public string $submission,
+        public string $destination,
+        public string $routing,
     ) {
     }
 }

@@ -13,10 +13,10 @@ use Jose\Component\Signature\Serializer\CompactSerializer;
 use OptiGov\FitConnect\DTOs\Incoming\SubmissionStatus;
 use OptiGov\FitConnect\Enums\FitConnectEventState;
 
-class EventLogVerifier
+readonly class EventLogVerifier
 {
     public function __construct(
-        private readonly ApiClient $apiClient,
+        private ApiClient $apiClient,
     ) {
     }
 

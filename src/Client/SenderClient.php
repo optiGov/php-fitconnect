@@ -17,15 +17,15 @@ use OptiGov\FitConnect\DTOs\Outgoing\FitConnectSubmission;
 use OptiGov\FitConnect\Exceptions\FitConnectException;
 use OptiGov\FitConnect\Fluent\Submission as FluentSubmission;
 
-class SenderClient
+readonly class SenderClient
 {
-    private readonly ApiClient $apiClient;
+    private ApiClient $apiClient;
 
-    private readonly EventLogVerifier $eventLogVerifier;
+    private EventLogVerifier $eventLogVerifier;
 
     public function __construct(
         FitConnectConfig $config,
-        private readonly Encryptor $encryptor,
+        private Encryptor $encryptor,
         ?HttpClient $httpClient = null,
     ) {
         $this->apiClient = new ApiClient($config, $httpClient);

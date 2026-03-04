@@ -13,13 +13,13 @@ use OptiGov\FitConnect\DTOs\Outgoing\ZbpState;
 use OptiGov\FitConnect\Fluent\Zbp\Message as FluentMessage;
 use OptiGov\FitConnect\Fluent\Zbp\State as FluentState;
 
-class ZbpClient
+readonly class ZbpClient
 {
-    private readonly EnvelopeBuilder $envelopeBuilder;
+    private EnvelopeBuilder $envelopeBuilder;
 
     public function __construct(
-        private readonly SenderClient $senderClient,
-        private readonly FitConnectConfig $config,
+        private SenderClient $senderClient,
+        private FitConnectConfig $config,
     ) {
         if ($config->zbpSigningKey === null || $config->zbpCertificate === null) {
             throw new \InvalidArgumentException('ZbpClient requires zbpSigningKey and zbpCertificate in config');
