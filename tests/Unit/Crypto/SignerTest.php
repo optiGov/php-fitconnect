@@ -11,13 +11,10 @@ use Jose\Component\Signature\JWSVerifier;
 use Jose\Component\Signature\Serializer\CompactSerializer;
 use OptiGov\FitConnect\Crypto\Signer;
 use OptiGov\FitConnect\Tests\TestKeys;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @internal
- *
- * @coversNothing
- */
+#[CoversClass(Signer::class)]
 class SignerTest extends TestCase
 {
     use TestKeys;

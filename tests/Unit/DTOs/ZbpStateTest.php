@@ -6,13 +6,10 @@ namespace OptiGov\FitConnect\Tests\Unit\DTOs;
 
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpState;
 use OptiGov\FitConnect\Enums\ZbpSubmissionState;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @internal
- *
- * @coversNothing
- */
+#[CoversClass(ZbpState::class)]
 class ZbpStateTest extends TestCase
 {
     public function testZbpStateConstruction(): void

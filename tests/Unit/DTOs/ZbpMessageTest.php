@@ -7,13 +7,12 @@ namespace OptiGov\FitConnect\Tests\Unit\DTOs;
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpMessage;
 use OptiGov\FitConnect\Enums\StorkQaaLevel;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @internal
- *
- * @coversNothing
- */
+#[CoversClass(ZbpMessage::class)]
+#[UsesClass(Attachment::class)]
 class ZbpMessageTest extends TestCase
 {
     public function testZbpMessageConstruction(): void

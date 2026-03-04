@@ -27,7 +27,8 @@
     },
     "scripts": {
         "phpstan-analyse": "php -d memory_limit=-1 vendor/bin/phpstan analyse",
-        "php-cs-fixer-fix": "php -d memory_limit=-1 vendor/bin/php-cs-fixer fix"
+        "php-cs-fixer-fix": "php -d memory_limit=-1 vendor/bin/php-cs-fixer fix",
+        "phpunit": "php -d memory_limit=-1 vendor/bin/phpunit"
     },
     "config": {
         "sort-packages": true

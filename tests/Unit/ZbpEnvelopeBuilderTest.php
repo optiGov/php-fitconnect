@@ -7,17 +7,21 @@ namespace OptiGov\FitConnect\Tests\Unit;
 use OptiGov\FitConnect\Client\Zbp\EnvelopeBuilder;
 use OptiGov\FitConnect\Crypto\Signer;
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
+use OptiGov\FitConnect\DTOs\Outgoing\FitConnectSubmission;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpMessage;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpState;
 use OptiGov\FitConnect\Enums\ZbpSubmissionState;
 use OptiGov\FitConnect\Tests\TestKeys;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @internal
- *
- * @coversNothing
- */
+#[CoversClass(EnvelopeBuilder::class)]
+#[UsesClass(Signer::class)]
+#[UsesClass(Attachment::class)]
+#[UsesClass(FitConnectSubmission::class)]
+#[UsesClass(ZbpMessage::class)]
+#[UsesClass(ZbpState::class)]
 class ZbpEnvelopeBuilderTest extends TestCase
 {
     use TestKeys;

@@ -9,11 +9,17 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use OptiGov\FitConnect\Api\ApiClient;
+use OptiGov\FitConnect\Api\EventLogVerifier;
 use OptiGov\FitConnect\Client\SenderClient;
+use OptiGov\FitConnect\Client\Zbp\EnvelopeBuilder;
 use OptiGov\FitConnect\Client\ZbpClient;
 use OptiGov\FitConnect\Config\Endpoints;
 use OptiGov\FitConnect\Config\FitConnectConfig;
 use OptiGov\FitConnect\Crypto\Encryptor;
+use OptiGov\FitConnect\Crypto\Signer;
+use OptiGov\FitConnect\DTOs\Incoming\SubmissionResult;
+use OptiGov\FitConnect\DTOs\Incoming\SubmissionStatus;
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
 use OptiGov\FitConnect\DTOs\Outgoing\FitConnectSubmission;
 use OptiGov\FitConnect\DTOs\Outgoing\ZbpMessage;
@@ -22,15 +28,28 @@ use OptiGov\FitConnect\Enums\FitConnectEventState;
 use OptiGov\FitConnect\Enums\ZbpSubmissionState;
 use OptiGov\FitConnect\Exceptions\FitConnectException;
 use OptiGov\FitConnect\Tests\TestKeys;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-/**
- * @internal
- *
- * @coversNothing
- */
+#[CoversClass(SenderClient::class)]
+#[CoversClass(ZbpClient::class)]
+#[UsesClass(ApiClient::class)]
+#[UsesClass(EventLogVerifier::class)]
+#[UsesClass(EnvelopeBuilder::class)]
+#[UsesClass(Endpoints::class)]
+#[UsesClass(FitConnectConfig::class)]
+#[UsesClass(Encryptor::class)]
+#[UsesClass(Signer::class)]
+#[UsesClass(SubmissionResult::class)]
+#[UsesClass(SubmissionStatus::class)]
+#[UsesClass(Attachment::class)]
+#[UsesClass(FitConnectSubmission::class)]
+#[UsesClass(ZbpMessage::class)]
+#[UsesClass(ZbpState::class)]
+#[UsesClass(FitConnectException::class)]
 class FitConnectClientTest extends TestCase
 {
     use TestKeys;
@@ -52,6 +71,7 @@ class FitConnectClientTest extends TestCase
                 token: 'https://auth-testing.example.com/token',
                 submission: 'https://test.example.com/submission-api',
                 destination: 'https://test.example.com/destination-api',
+                routing: 'https://test.example.com/routing-api',
             ),
             zbpDestinationId: 'default-dest-id',
             zbpSigningKey: $this->privateKeyPem,

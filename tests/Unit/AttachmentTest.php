@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace OptiGov\FitConnect\Tests\Unit;
 
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @internal
- *
- * @coversNothing
- */
+#[CoversClass(Attachment::class)]
 class AttachmentTest extends TestCase
 {
     public function testFromStringCreatesAttachment(): void

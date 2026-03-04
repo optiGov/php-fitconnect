@@ -11,13 +11,10 @@ use Jose\Component\Encryption\JWEDecrypter;
 use Jose\Component\Encryption\Serializer\CompactSerializer;
 use OptiGov\FitConnect\Crypto\Encryptor;
 use OptiGov\FitConnect\Tests\TestKeys;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @internal
- *
- * @coversNothing
- */
+#[CoversClass(Encryptor::class)]
 class EncryptorTest extends TestCase
 {
     use TestKeys;
