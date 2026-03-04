@@ -21,8 +21,8 @@ readonly class ZbpClient
         private SenderClient $senderClient,
         private FitConnectConfig $config,
     ) {
-        if ($config->zbpSigningKey === null || $config->zbpCertificate === null) {
-            throw new \InvalidArgumentException('ZbpClient requires zbpSigningKey and zbpCertificate in config');
+        if ($config->zbpSigningKey === null || $config->zbpCertificate === null || $config->zbpDestinationId === null) {
+            throw new \InvalidArgumentException('zbpDestinationId, zbpSigningKey and zbpCertificate must all be provided');
         }
 
         $this->envelopeBuilder = new EnvelopeBuilder(

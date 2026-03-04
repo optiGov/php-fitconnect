@@ -52,7 +52,7 @@ readonly class EventLogVerifier
 
         $kid = $header['kid'] ?? throw new \InvalidArgumentException('Invalid SET: missing kid');
 
-        $payload = json_decode($jws->getPayload(), true) ?: [];
+        $payload = json_decode($jws->getPayload(), true, flags: JSON_THROW_ON_ERROR);
 
         $this->validateEventPayload($payload);
 
