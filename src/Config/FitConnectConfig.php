@@ -21,7 +21,7 @@ readonly class FitConnectConfig
         ];
 
         if (count(array_unique($zbpRequired)) !== 1) {
-            throw new \InvalidArgumentException('zbpDestinationId, zbpSigningKey, and zbpCertificate must all be provided or all be null');
+            throw new \InvalidArgumentException('zbpDestinationId, zbpSigningKey and zbpCertificate must all be provided or all be null');
         }
     }
 }
