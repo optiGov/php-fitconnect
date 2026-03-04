@@ -89,10 +89,10 @@ class SubmissionBuilder
 
         if (! empty($message->attachments)) {
             $payload['attachments'] = array_map(
-                fn (Attachment $a) => [
-                    'filename' => $a->filename,
-                    'sha512sum' => hash('sha512', $a->content),
-                    'contentLength' => strlen($a->content),
+                fn (Attachment $attachment) => [
+                    'filename' => $attachment->filename,
+                    'sha512sum' => hash('sha512', $attachment->content),
+                    'contentLength' => strlen($attachment->content),
                 ],
                 $message->attachments,
             );

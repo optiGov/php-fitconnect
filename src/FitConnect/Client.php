@@ -19,7 +19,6 @@ use OptiGov\FitConnect\DTOs\Outgoing\FitConnectSubmission;
 use OptiGov\FitConnect\Enums\FitConnectEventState;
 use OptiGov\FitConnect\Exceptions\FitConnectException;
 use OptiGov\FitConnect\FitConnect\Fluent\SubmissionBuilder as FluentSubmissionBuilder;
-use Symfony\Component\Uid\Uuid;
 
 class Client
 {
@@ -105,19 +104,15 @@ class Client
 
     public function submit(FitConnectSubmission $submission, JWK $jwk, string $destinationId): SubmissionResult
     {
-        // 1. Prepare attachments: generate UUIDs, build metadata, encrypt
-        $attachmentIds = [];
+        // 1. Prepare attachments: build metadata, encrypt
         $attachmentMeta = [];
         $encryptedAttachments = [];
 
         foreach ($submission->attachments as $attachment) {
-            $id = Uuid::v4()->toString();
-            $attachmentIds[] = $id;
-
             $attachmentMeta[] = [
                 'filename' => $attachment->filename,
                 'purpose' => 'attachment',
-                'attachmentId' => $id,
+                'attachmentId' => $attachment->id,
                 'description' => $attachment->filename,
                 'mimeType' => $attachment->mimeType,
                 'hash' => [
@@ -126,7 +121,7 @@ class Client
                 ],
             ];
 
-            $encryptedAttachments[$id] = $this->encryptor->encrypt($attachment->content, $jwk);
+            $encryptedAttachments[$attachment->id] = $this->encryptor->encrypt($attachment->content, $jwk);
         }
 
         // 2. Build + encrypt metadata
@@ -160,7 +155,7 @@ class Client
             ->acceptJson()
             ->post($this->endpoint('submission').'/v2/submissions', [
                 'destinationId' => $destinationId,
-                'announcedAttachments' => $attachmentIds,
+                'announcedAttachments' => array_map(fn ($attachment) => $attachment->id, $submission->attachments),
                 'publicService' => [
                     'identifier' => $submission->serviceIdentifier,
                     'name' => $submission->serviceName,
@@ -202,7 +197,7 @@ class Client
             submissionId: $submissionId,
             caseId: $submissionData['caseId'] ?? '',
             destinationId: $destinationId,
-            attachmentIds: $attachmentIds,
+            attachmentIds: array_map(fn ($attachment) => $attachment->id, $submission->attachments),
         );
     }
 

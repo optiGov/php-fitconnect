@@ -96,15 +96,16 @@ echo $result->destinationId;
 
 ```php
 use OptiGov\FitConnect\Facades\Zbp;
+use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
 
 $result = Zbp::message()
-    ->to('e0e02494-eca2-4a6b-9320-fc527747878c')   
+    ->to('e0e02494-eca2-4a6b-9320-fc527747878c')
     ->from('My Service Portal')
     ->title('Your application has been received')
     ->content('Please find your documents attached.')
     ->service('My Service Portal')
-    ->attach('invoice.pdf', file_get_contents('/path/to/invoice.pdf'), 'application/pdf')
-    ->attach('receipt.pdf', file_get_contents('/path/to/receipt.pdf'), 'application/pdf')
+    ->attach(new Attachment('invoice.pdf', file_get_contents('/path/to/invoice.pdf'), 'application/pdf'))
+    ->attach(new Attachment('receipt.pdf', file_get_contents('/path/to/receipt.pdf'), 'application/pdf'))
     ->send();
 ```
 

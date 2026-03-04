@@ -116,9 +116,9 @@ class MessageBuilder
         return $this;
     }
 
-    public function attach(string $filename, string $content, string $mimeType): self
+    public function attach(Attachment $attachment): self
     {
-        $this->attachments[] = new Attachment($filename, $content, $mimeType);
+        $this->attachments[] = $attachment;
 
         return $this;
     }
