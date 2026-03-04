@@ -8,7 +8,8 @@
         "illuminate/support": "^10.0|^11.0|^12.0",
         "illuminate/http": "^10.0|^11.0|^12.0",
         "web-token/jwt-library": "^3.0",
-        "symfony/uid": "^6.0|^7.0"
+        "symfony/uid": "^6.0|^7.0",
+        "ext-fileinfo": "*"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
