@@ -6,6 +6,7 @@
     "require": {
         "php": "^8.5",
         "ext-fileinfo": "*",
+        "ext-openssl": "*",
         "guzzlehttp/guzzle": "^7.0",
         "symfony/uid": "^7.0",
         "web-token/jwt-library": "^3.0"
@@ -26,8 +27,8 @@
         }
     },
     "scripts": {
-        "phpstan-analyse": "php -d memory_limit=-1 vendor/bin/phpstan analyse",
-        "php-cs-fixer-fix": "php -d memory_limit=-1 vendor/bin/php-cs-fixer fix",
+        "php-cs-fixer": "php -d memory_limit=-1 vendor/bin/php-cs-fixer fix",
+        "phpstan": "php -d memory_limit=-1 vendor/bin/phpstan analyse",
         "phpunit": "php -d memory_limit=-1 vendor/bin/phpunit"
     },
     "config": {
