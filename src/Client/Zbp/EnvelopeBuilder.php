@@ -14,7 +14,11 @@ class EnvelopeBuilder
 {
     private const MESSAGE_SERVICE_IDENTIFIER = 'urn:schema-fitko-de:fit-connect:id.bund.de:message_v6';
 
+    private const MESSAGE_SERVICE_NAME = 'ZBP Message Forwarding';
+
     private const STATE_SERVICE_IDENTIFIER = 'urn:schema-fitko-de:fit-connect:id.bund.de:status_v6';
+
+    private const STATE_SERVICE_NAME = 'ZBP State Forwarding';
 
     private const SCHEMA_URI = 'https://schema.fitko.de/fit-connect/id.bund.de/message_v6/1.0.0/zbp-message.schema.json';
 
@@ -31,7 +35,7 @@ class EnvelopeBuilder
             data: $this->buildSignedEnvelope($payloadJson),
             schemaUri: self::SCHEMA_URI,
             serviceIdentifier: self::MESSAGE_SERVICE_IDENTIFIER,
-            serviceName: $message->service,
+            serviceName: self::MESSAGE_SERVICE_NAME,
             attachments: $message->attachments,
         );
     }
@@ -44,7 +48,7 @@ class EnvelopeBuilder
             data: $this->buildSignedEnvelope($payloadJson),
             schemaUri: self::SCHEMA_URI,
             serviceIdentifier: self::STATE_SERVICE_IDENTIFIER,
-            serviceName: 'ZBP State Forwarding',
+            serviceName: self::STATE_SERVICE_NAME,
         );
     }
 

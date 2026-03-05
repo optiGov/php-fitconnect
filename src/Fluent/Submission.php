@@ -66,6 +66,10 @@ class Submission
 
     public function send(): SubmissionResult
     {
+        if ($this->destinationId === '') {
+            throw new \InvalidArgumentException('Cannot send submission: missing required field destinationId');
+        }
+
         $submission = new FitConnectSubmission(
             data: $this->dataJson,
             schemaUri: $this->schemaUri,

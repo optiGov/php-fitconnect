@@ -30,7 +30,11 @@ readonly class Signer
             throw new \RuntimeException('Cannot parse certificate: '.openssl_error_string());
         }
 
-        $this->commonName = $cert['subject']['CN'];
+        $commonName = $cert['subject']['CN'] ?? null;
+        if (! is_string($commonName) || $commonName === '') {
+            throw new \RuntimeException('Certificate subject must contain a CN (Common Name)');
+        }
+        $this->commonName = $commonName;
 
         $this->signingJwk = JWKFactory::createFromKey(
             $this->privateKeyPem,

@@ -64,6 +64,30 @@ class SignerTest extends TestCase
         $this->assertSame($payload['iat'] + 1800, $payload['exp']); // 30 min default
     }
 
+    public function testThrowsWhenCertificateHasNoCN(): void
+    {
+        // Generate a certificate without CN (only O and C)
+        $key = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        $csr = openssl_csr_new(['O' => 'Test', 'C' => 'DE'], $key);
+        $cert = openssl_csr_sign($csr, null, $key, 365);
+        $certPem = '';
+        openssl_x509_export($cert, $certPem);
+
+        $keyPem = '';
+        openssl_pkey_export($key, $keyPem);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('CN');
+        new Signer($keyPem, $certPem);
+    }
+
+    public function testThrowsWhenCertificateIsInvalid(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Cannot parse certificate');
+        new Signer($this->privateKeyPem, 'not-a-certificate');
+    }
+
     public function testBuildAuthorJwtIsValidRs512(): void
     {
         $jwt = $this->signer->buildAuthorJwt();

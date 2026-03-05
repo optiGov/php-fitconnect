@@ -189,7 +189,7 @@ class ApiClient
     /**
      * @return string[]
      */
-    public function fetchSubmissionEvents(string $submissionId): array
+    public function fetchSubmissionEvents(string $submissionId, int $limit = 100, int $offset = 0): array
     {
         $response = $this->httpClient->request('GET', $this->endpoint('submission')."/v2/submissions/{$submissionId}/events", [
             'headers' => [
@@ -197,8 +197,8 @@ class ApiClient
                 'Accept' => 'application/json',
             ],
             'query' => [
-                'limit' => 100,
-                'offset' => 0,
+                'limit' => $limit,
+                'offset' => $offset,
             ],
         ]);
 
