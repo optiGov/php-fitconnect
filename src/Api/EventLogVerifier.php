@@ -50,13 +50,22 @@ readonly class EventLogVerifier
             throw new \InvalidArgumentException('Invalid SET: wrong alg header');
         }
 
-        $kid = $header['kid'] ?? throw new \InvalidArgumentException('Invalid SET: missing kid');
+        if (! is_string($header['kid'] ?? null)) {
+            throw new \InvalidArgumentException('Invalid SET: missing kid');
+        }
+
+        $kid = $header['kid'];
 
         $payload = json_decode($jws->getPayload(), true, flags: JSON_THROW_ON_ERROR);
 
         $this->validateEventPayload($payload);
 
-        $jwk = $this->fetchSigningKey($kid, $payload['iss']);
+        $issuer = $payload['iss'];
+        if (! is_string($issuer)) {
+            throw new \InvalidArgumentException('Invalid SET: iss must be a string');
+        }
+
+        $jwk = $this->fetchSigningKey($kid, $issuer);
 
         $verifier = new JWSVerifier(new AlgorithmManager([new PS512]));
         if (! $verifier->verifyWithKey($jws, $jwk, 0)) {
@@ -74,7 +83,7 @@ readonly class EventLogVerifier
                 throw new \InvalidArgumentException("Invalid SET: missing claim '{$claim}'");
             }
         }
-        if (count($payload['events']) !== 1) {
+        if (! is_array($payload['events']) || count($payload['events']) !== 1) {
             throw new \InvalidArgumentException('Invalid SET: events must contain exactly one entry');
         }
     }

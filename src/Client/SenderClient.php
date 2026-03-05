@@ -137,7 +137,10 @@ readonly class SenderClient
             $submission->serviceName,
         );
 
-        $submissionId = $submissionData['submissionId'];
+        $submissionId = $submissionData['submissionId'] ?? null;
+        if (! is_string($submissionId)) {
+            throw new FitConnectException(message: 'Announce response missing submissionId', step: 'announce', statusCode: 0);
+        }
 
         // 5. Upload attachments
         foreach ($encryptedAttachments as $attachmentId => $encryptedContent) {

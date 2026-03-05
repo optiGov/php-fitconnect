@@ -55,7 +55,8 @@ class ApiClient
         $data = $this->jsonDecode($response);
 
         $this->accessToken = $data['access_token'];
-        $this->tokenExpiresAt = time() + (int) ($data['expires_in'] ?? 300) - 5;
+        $expiresIn = $data['expires_in'] ?? 300;
+        $this->tokenExpiresAt = time() + (is_int($expiresIn) ? $expiresIn : 300) - 5;
     }
 
     public function getDestination(string $destinationId): DestinationInfo
