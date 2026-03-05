@@ -18,6 +18,7 @@ use OptiGov\FitConnect\Config\Endpoints;
 use OptiGov\FitConnect\Config\FitConnectConfig;
 use OptiGov\FitConnect\Crypto\Encryptor;
 use OptiGov\FitConnect\Crypto\Signer;
+use OptiGov\FitConnect\DTOs\Incoming\DestinationInfo;
 use OptiGov\FitConnect\DTOs\Incoming\SubmissionResult;
 use OptiGov\FitConnect\DTOs\Incoming\SubmissionStatus;
 use OptiGov\FitConnect\DTOs\Outgoing\Attachment;
@@ -27,6 +28,9 @@ use OptiGov\FitConnect\DTOs\Outgoing\ZbpState;
 use OptiGov\FitConnect\Enums\FitConnectEventState;
 use OptiGov\FitConnect\Enums\ZbpSubmissionState;
 use OptiGov\FitConnect\Exceptions\FitConnectException;
+use OptiGov\FitConnect\Fluent\Submission as FluentSubmission;
+use OptiGov\FitConnect\Fluent\Zbp\Message as FluentMessage;
+use OptiGov\FitConnect\Fluent\Zbp\State as FluentState;
 use OptiGov\FitConnect\Tests\TestKeys;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -50,6 +54,10 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(ZbpMessage::class)]
 #[UsesClass(ZbpState::class)]
 #[UsesClass(FitConnectException::class)]
+#[UsesClass(DestinationInfo::class)]
+#[UsesClass(FluentSubmission::class)]
+#[UsesClass(FluentMessage::class)]
+#[UsesClass(FluentState::class)]
 class FitConnectClientTest extends TestCase
 {
     use TestKeys;
@@ -283,6 +291,101 @@ class FitConnectClientTest extends TestCase
             $this->assertSame('ZBP_401_001', $e->errorCode);
             $this->assertSame('Invalid credentials', $e->description);
         }
+    }
+
+    public function testTokenIsRefreshedWhenExpired(): void
+    {
+        // First token expires immediately (expires_in = 1, minus 5s buffer = already expired)
+        $firstToken = new Response(200, ['Content-Type' => 'application/json'], json_encode([
+            'access_token' => 'token-1',
+            'expires_in' => 1,
+        ]));
+        $secondToken = new Response(200, ['Content-Type' => 'application/json'], json_encode([
+            'access_token' => 'token-2',
+            'expires_in' => 300,
+        ]));
+
+        $mock = new MockHandler([
+            $firstToken,
+            new Response(200, ['Content-Type' => 'application/json'], $this->fakeKeyResponse()),
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                'submissionId' => 'sub-1', 'caseId' => 'case-1',
+            ])),
+            new Response(200),
+            // Second call triggers re-auth because token-1 is expired
+            $secondToken,
+            new Response(200, ['Content-Type' => 'application/json'], $this->fakeKeyResponse()),
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                'submissionId' => 'sub-2', 'caseId' => 'case-2',
+            ])),
+            new Response(200),
+        ]);
+
+        $zbpClient = $this->createZbpClient($mock);
+
+        $state = new ZbpState(
+            applicationId: '54a0cd6a-e11a-4cbb-888f-56f2ca00d8af',
+            status: ZbpSubmissionState::SUBMITTED,
+            publicServiceName: 'Service',
+            senderName: 'Sender',
+        );
+
+        $result1 = $zbpClient->sendState($state);
+        $this->assertSame('sub-1', $result1->submissionId);
+
+        $result2 = $zbpClient->sendState($state);
+        $this->assertSame('sub-2', $result2->submissionId);
+
+        // Should have 8 requests: token1 + keys + announce + submit + token2 + keys + announce + submit
+        $this->assertCount(8, $this->history);
+    }
+
+    public function testRetryOn500ThenSuccess(): void
+    {
+        // Use default HTTP client (with retry middleware) by NOT passing a custom one
+        // Instead, create a mock handler with retry stack
+        $mock = new MockHandler([
+            $this->tokenResponse(),
+            new Response(500), // First key fetch fails
+            new Response(500), // Retry 1
+            new Response(200, ['Content-Type' => 'application/json'], $this->fakeKeyResponse()), // Retry 2 succeeds
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                'submissionId' => 'sub-retry', 'caseId' => 'case-retry',
+            ])),
+            new Response(200),
+        ]);
+
+        $handlerStack = HandlerStack::create($mock);
+        $handlerStack->push(Middleware::retry(
+            function (int $retries, RequestInterface $request, ?ResponseInterface $response): bool {
+                if ($retries >= 3) {
+                    return false;
+                }
+                if ($response === null) {
+                    return true;
+                }
+
+                return in_array($response->getStatusCode(), [500, 502, 503], true);
+            },
+            function (int $retries): int {
+                return 0; // No delay in tests
+            },
+        ));
+        $handlerStack->push(Middleware::history($this->history));
+        $httpClient = new HttpClient(['handler' => $handlerStack, 'http_errors' => false]);
+
+        $client = new SenderClient($this->config, new Encryptor, $httpClient);
+        $zbpClient = new ZbpClient($client, $this->config);
+
+        $state = new ZbpState(
+            applicationId: '54a0cd6a-e11a-4cbb-888f-56f2ca00d8af',
+            status: ZbpSubmissionState::SUBMITTED,
+            publicServiceName: 'Service',
+            senderName: 'Sender',
+        );
+
+        $result = $zbpClient->sendState($state);
+        $this->assertSame('sub-retry', $result->submissionId);
     }
 
     private function createClient(MockHandler $mock): SenderClient

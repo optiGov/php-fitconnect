@@ -51,7 +51,7 @@ class ZbpEnvelopeBuilderTest extends TestCase
 
         $this->assertNotEmpty($submission->data);
         $this->assertSame('urn:schema-fitko-de:fit-connect:id.bund.de:message_v6', $submission->serviceIdentifier);
-        $this->assertSame('Service', $submission->serviceName);
+        $this->assertSame('ZBP Message Forwarding', $submission->serviceName);
         $this->assertEmpty($submission->attachments);
 
         // Data should be a signed envelope (JSON with content, sha512sum, authorToken, authorCertificate)
